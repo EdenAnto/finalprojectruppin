@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="./static/Styles/index.css">
+</head>
+<body>
+    <div class="bar">
+        <h1 class="text-center" onclick="(function() {window.location.href = '/';})()">Video Analysis</h1>
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Object Search...">
+            <button onclick="search()">Search</button>
+        </div>
+    </div>
+    <div class="container">
+        <div class="mainContainer">
+            <div class="leftContent">
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="videoFile">Choose a video file:</label>
+                        <input type="file" class="form-control-file" id="videoFile" name="file" accept="video/*" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="videoFile">Video Name:</label>
+                        <input type="text" class="form-control" id="nameTB" name="nameTB" disabled required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Upload</button>
+                </form>
+            </div>
+    
+            <div class="rightContent">
+                <div class="image-grid" id="images">
+                    {% for card in cards %}
+                        {% if not 'blank.png' in card[0] %}
+                            {% if card[-1] %}
+                            <div class="card card-processing" >
+                            {% else %}
+                            <div class="card" onclick="onClickCard(this)">
+                            {% endif %}
+                        {% else %}
+                        <div class="card" >
+                        {% endif %}
+                            <img src="{{card[0]}}" alt="{{card[1]}}">
+                            <div class="card-content">
+                                <h3>{{card[1].split('_')[0]}}</h3>
+                                <!-- <p>{{card[2]}}</p> -->
+                                </div>
+                            </div>
+                    {% endfor %}
+					<a href="/search" id="showAll">Show All</a>
+                </div>
+            </div>
+        </div>    
+    </div>
+    
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script>
+        const searchInput = document.getElementById('searchInput');
+            searchInput.addEventListener('keydown', function(event) {
+                if (event.key === 'Enter') {
+                    search();
+                }
+            });
+        function onClickCard(card) {
+            const img = card.querySelector('img');
+            const imgSrc = img.src;
+            // localStorage.setItem('taggedFile', img.alt);
+            // localStorage.setItem('history', true);
+            window.location.href=`/res?videoname=${btoa(img.alt)}`
+        }
+
+        function search() {
+            const query = document.getElementById('searchInput').value;
+            if (query != '')
+                window.location.href = `/search?q=${query}`;
+        }
+
+        $(document).ready(function() {
+            $('.card-processing img').after('<p>Processing</p>');
+            $('#videoFile').on('change', function() {
+                let fileName = $(this).val().split('\\').pop().split('.')[0]; // Get the file name
+                $('#nameTB').val(fileName)
+                $('#nameTB').prop('disabled', false);
+            });
+
+            $('#uploadForm').submit(function(event) {
+                $('#nameTB').prop('disabled', false);
+                event.preventDefault();
+                console.log(this)
+                var formData = new FormData(this);
+                console.log(formData)
+                for (var pair of formData.entries()) {
+                    console.log(pair[0]+ ': ' + pair[1]);
+                }
+                $.ajax({
+                    url: '/upload',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        console.log(response);
+                        if (response.message == 'Exist in server'){
+                            localStorage.setItem('exist', "true");
+                            window.location.href = `/res?videoname=${btoa(response.fileName)}`;
+                        }
+                        else if(response.status == 200) {
+                            localStorage.setItem('fileName', response.fileName);
+                            localStorage.setItem('format', response.format);
+                            window.location.href = '/processing';
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error(xhr.responseText);
+                    }
+                });
+            });
+            //addCards();
+        });
+    </script>
+</body>
+</html>

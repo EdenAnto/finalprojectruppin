@@ -1,0 +1,240 @@
+body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Arial', sans-serif;
+    background-color: #f8f9fa;
+}
+
+.bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    height: 80px;
+    background-color: #343a40; /* Darker background */
+    color: white;
+    border-bottom: 1px solid #dee2e6;
+    padding: 0 20px;
+    position: relative;
+}
+
+.bar h1 {
+    margin: 0;
+}
+
+.search-box {
+    display: flex;
+    align-items: center;
+}
+
+.search-box input[type="text"] {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 20px 0 0 20px;
+    outline: none;
+}
+
+.search-box button {
+    padding: 5px 10px;
+    border: none;
+    background-color: #007bff;
+    color: white;
+    border-radius: 0 20px 20px 0;
+    cursor: pointer;
+    display: block;
+}
+
+.windowContainer {
+    height: 100%;
+    width: 100%;
+    display: flex;
+}
+
+/* Sidebar for Advanced Search */
+.advanced-search-bar {
+    background-color: white;
+    height: 100%; /* Full height */
+    width: 300px; /* Fixed width */
+    position: fixed;
+    top: 0;
+    right: -300px; /* Initially hidden */
+    transition: right 0.3s ease; /* Smooth slide effect */
+    z-index: 1000; /* Ensure it appears on top */
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.5); /* Shadow for depth */
+    padding: 20px;
+}
+
+.advanced-search-bar.open {
+    right: 0; /* Slide in when open */
+}
+
+.advanced-search-bt {
+    position: absolute;
+    display: flex;
+    bottom: 0px;
+    right: 0px;
+    width: 100%;
+    /* text-decoration: underline; */
+    cursor: pointer;
+    margin-bottom: 0px;
+    justify-content: space-between;
+    padding: 10px;
+    padding-bottom: 0px;
+}
+.advanced-search-bt .openBar{
+    margin-bottom: 0;
+    position: absolute;
+    display: flex;
+    bottom: 0px;
+    right: 0px;
+    text-decoration: underline;
+    padding: 0 20px;
+}
+.advanced-search-bar button{
+    margin-bottom: 10px;
+}
+
+#dropdownContainer{
+    position: relative;
+    max-height: 95%;
+    overflow-y: auto;
+}
+
+
+/* Dropdown Container */
+.dropdown-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    border-bottom: 1px solid #343a40 ;
+}
+
+.form-group {
+    margin-bottom: 15px;
+    flex: 1; /* Makes each dropdown take equal width */
+    min-width: 150px;
+}
+
+.form-group label {
+    color: black;
+}
+
+.container {
+    margin-left: 20px; /* Add space to avoid sidebar overlapping content */
+}
+
+.image-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+}
+
+.card {
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.card-processing {
+    position: relative;
+}
+.card-processing img {
+    filter: brightness(50%)
+}
+
+.card-processing p.processing {
+    text-align: center;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -90%); /* Center the p element */
+    color: white;
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 10px; 
+    font-size: 18px;
+}
+
+
+.card img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+
+.card-content {
+    padding: 10px;
+    text-align: center;
+}
+
+.card-content h5 {
+    margin: 0;
+    font-size: 1.25em;
+}
+
+.card-content p {
+    margin: 5px 0 0;
+    color: #777;
+    font-size: 0.9em;
+}
+
+.card:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* Multiselect Dropdown Styling */
+.multiselect {
+    width: 100%;
+}
+
+.selectBox {
+    position: relative;
+}
+
+.selectBox select {
+    width: 100%;
+}
+
+.overSelect {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+
+.select-options {
+    display: none;
+    border: 0.5px #7c7c7c solid;
+    background-color: #ffffff;
+    max-height: 150px;
+    overflow-y: scroll;
+}
+
+.select-options label {
+    display: block;
+    font-weight: normal;
+    white-space: nowrap;
+    min-height: 1.2em;
+    background-color: #ffffff00;
+    padding: 0 2.25rem 0 .75rem;
+    color: black;
+}
+
+.select-options label:hover {
+    background-color: #1e90ff;
+}
+
+.filterTitle {
+    width: 100%;
+    text-align: center;
+}
+
+.form-select {
+    width: 100%;
+    padding: 5px;
+}

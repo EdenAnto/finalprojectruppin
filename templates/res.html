@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Analysis and Expanding Cards</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="./static/Styles/res.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+<body>
+    <div class="bar">
+        <h1 class="text-center" id="title" onclick="(function() {window.location.href = '/';})()">Video Analysis - {{videoName}}</h1>
+    </div>
+    <div class="row mt-4">
+        <div class="row g-3 w-100">
+            <div class="col-md-6">
+                <h4 for="videoPlayer1" class="form-label">Original Video</h4>
+                <video id="videoPlayer1" width="100%" preload="auto">
+                    <source id="videoSource1" type="video/mp4" src="{{pathOrigin}}">
+                </video>
+            </div>
+            <div class="col-md-6">
+                <h4 for="videoPlayer2" class="form-label">Processed Video</h4>
+                <video id="videoPlayer2" width="100%" preload="auto">
+                    <source id="videoSource2" type="video/mp4" src="{{pathDetected}}">
+                </video>
+            </div>
+        </div>
+        <div class="w-100 controlers">
+            <div class="row g-3 w-100 justify-content-between mt-2 pr-3 pl-4">
+                <button id="playPauseButton" class="btn btn-success">Play</button>  <!-- Updated to a toggle button -->
+                <input type="range" id="progressBar" value="0" min="0" max="100" step="1" class="w-75">
+                <button id="stopButton" class="btn btn-danger">Stop</button>
+            </div>
+            <div class="row g-3 w-100 justify-content-center">
+                <span id="currentTime">0:00</span> / <span id="totalDuration">0:00</span>
+            </div>
+        </div>
+
+
+        <div class="frameCardsContainer">
+            <h3>List of frames:</h3>
+            <div class="row frameCards">
+                {% for frame in statistics["frame"]["rawData"] %}
+                    <!-- <img data-src="{{ framesPath }}frame_{{ loop.index0 }}.jpg" class="frameCard" id="frame_{{ loop.index0 }}" frame="{{ loop.index0 }}" onclick="showFrameDet(this)"> -->
+                    <img data-src="{{framesPath}}frame_{{loop.index0}}.jpg" class="frameCard" id="frame_{{loop.index0}}" frame="{{loop.index0}}" onclick="showFrameDet(this)">
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="container mt-2">
+
+        <div class="containerChild">
+            <h3>Frame Explore:</h3>
+            <div class="detailsToShowOnFrame"></div>
+        </div> <!-- dynamicly add data -->
+        <div class="objectsContainer containerChild"> <!-- dynamicly add data -->
+            <h3>Object found in video:</h3>
+            <div class="card-container">
+                {% for obj in objects %}
+                <div class="card" onclick="showCardDet(this)">{{obj}}</div>
+                {% endfor %}
+                </div>
+            <div class="detailsToShowOnObject" />
+        </div>
+        </div>
+    </div>
+
+    <script>
+
+        var initalObjectStatistic='';
+        var initalFrameStatistic = $('<h5>')
+    .text('Choose Frame To Explore')
+    .addClass('centeredElement'); // Add the class for centering        var statistics = '';
+        var video1Ready = false;
+        var video2Ready = false;
+        var framesLoaded = false;
+        const fps = {{fps}};
+        var lastFramesToGlow;
+
+        $(document).ready(function() {
+
+            statistics = {{ statistics|tojson }};
+            console.log(statistics)
+            const $video1 = $('#videoPlayer1');
+            const $video2 = $('#videoPlayer2');
+            const video1Dom = $video1[0];
+            const video2Dom = $video2[0];
+            
+            const $progressBar = $('#progressBar');
+            const $currentTimeDisplay = $('#currentTime');
+            const $totalDurationDisplay = $('#totalDuration');
+            const $playPauseButton = $('#playPauseButton'); // Changed ID for the button
+
+            function checkVideosReady() {
+                if (video1Ready && video2Ready && !framesLoaded) {
+                    $('.frameCard').each(function() {
+                        $(this).attr('src', $(this).data('src'));
+                    });
+                    framesLoaded = true
+                }
+            }
+
+            $video1.on('canplay', function() {
+                video1Ready = true;
+                checkVideosReady();
+            });
+
+            $video2.on('canplay', function() {
+                video2Ready = true;
+                checkVideosReady();
+            });
+
+
+             initalObjectStatistic = $('<table>').addClass('ObjectDetTable')
+                .append($('<tr>')
+                    .append($('<th colspan="2" class="text-center">').text("General Video Information"))
+                )
+                .append($('<tr>')
+                    .append($('<th class="text-center">').text('Object'))
+                    .append($('<th class="text-center">').text('Count on video'))
+                );
+
+                    
+            for (let value in statistics.video){
+                 for (let key in statistics.video[value]){
+                    initalObjectStatistic.append($('<tr>')
+                                .append($('<th>').text(`${key}:`))
+                                .append($('<td>').text(`${statistics.video[value][key]}`)));
+                 }
+            }
+            $('.detailsToShowOnObject').append(initalObjectStatistic)
+            $('.detailsToShowOnFrame').append(initalFrameStatistic)
+
+
+            // Helper function to format time in mm:ss format
+            function formatTime(seconds) {
+                const minutes = Math.floor(seconds / 60);
+                const remainingSeconds = Math.floor(seconds % 60);
+                return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
+            }
+
+            // Toggle play/pause functionality
+            $playPauseButton.click(function() {
+                // if (video1Dom.ended) {
+                //     $playPauseButton.text('Play');
+                //     $('#stopButton').click()
+                //     $playPauseButton.click()
+                // }
+                 if (video1Dom.paused) {
+                    $('.frameCard').removeClass('cardClicked');
+                    $('.detailsToShowOnFrame').empty().append(initalFrameStatistic)
+                    video1Dom.play();
+                    video2Dom.play();
+                    $playPauseButton.text('Pause');
+                } else {
+                    video1Dom.pause();
+                    video2Dom.pause();
+                    $playPauseButton.text('Play');  // Change text to "Play"
+                    let currentTime = video1Dom.currentTime;
+                    let frame=Math.round(currentTime*fps);
+                    $card =$(`#frame_${frame}`)
+                    $card.click();
+
+                    $container = $('.frameCards')
+                    
+                    if ($card.length) 
+                        scrollToCard($card,$container)
+                }
+            });
+
+            // Stop both videos and reset progress bar and current time
+            $('#stopButton').click(function() {
+                video1Dom.pause();
+                video2Dom.pause();
+                video1Dom.currentTime = 0;
+                video2Dom.currentTime = 0;
+                $progressBar.val(0);
+                $currentTimeDisplay.text('0:00'); // Reset current time display
+                $playPauseButton.text('Play');  // Reset button to "Play"
+                $('.frameCard.cardClicked').click()
+                $('.frameCards').animate({ scrollLeft: 0 }, 600);
+            });
+
+
+            $video1.on('ended', function() {
+                console.log('Video has ended.');
+                $playPauseButton.text('Restart');
+            });
+
+            // Update progress bar, current time display as videos play
+            $video1.on('timeupdate', function() {
+                let progress = (video1Dom.currentTime / video1Dom.duration) * 100;
+                $progressBar.val(progress);
+                $currentTimeDisplay.text(formatTime(video1Dom.currentTime));
+            });
+
+            // Set total duration once the metadata (video duration) is loaded
+            $video1.on('loadedmetadata', function() {
+                $totalDurationDisplay.text(formatTime(video1Dom.duration));
+            });
+
+            // Seek within the video when the progress bar is changed
+            $progressBar.on('input', function() {
+                const seekTo = (video1Dom.duration * $progressBar.val()) / 100;
+                video1Dom.currentTime = seekTo;
+                video2Dom.currentTime = seekTo;
+            });
+            if (localStorage.getItem('exist') == 'true'){
+                localStorage.setItem('exist', 'false')
+                alert("Video already processed in past with name : {{videoName}}")
+                
+            }
+        });
+
+        function showCardDet(card){
+            $('.frameCard').removeClass('glowing');
+            let hasClass = $(card).hasClass('cardClicked');
+            $('.card').removeClass('cardClicked');
+            if (hasClass){
+                console.log(initalObjectStatistic)
+                $('.detailsToShowOnObject').empty().append(initalObjectStatistic)
+                return
+            }
+            $(card).addClass('cardClicked');
+            $('.detailsToShowOnObject').text('')
+            let text='';
+            let selectedObj = $(card).text();
+        let dataPtr = statistics.object[selectedObj];
+
+        // Create table
+        let table = $('<table>').addClass('ObjectDetTable');
+
+        // Create table rows
+        let frameCountRow = $('<tr>')
+            .attr('onclick', `glowFrames(this, '${selectedObj}')`)
+            .append($('<th>').text("Frame count:"))
+            .append($('<td>').text(dataPtr["frameCount"]));
+
+        let maxInFrameRow = $('<tr>')
+            .attr('onclick', `glowFrames(this, '${selectedObj}')`)
+            .append($('<th>').text("Maximum appeared in frame:"))
+            .append($('<td>').text(dataPtr["maxInFrame"]["max"]));
+
+        let minInFrameRow = $('<tr>')
+            .attr('onclick', `glowFrames(this, '${selectedObj}')`)
+            .append($('<th>').text("Minimum appeared in frame:"))
+            .append($('<td>').text(dataPtr["minInFrame"]["min"]));
+
+        let countSequence = dataPtr["maxSequence"]["count"];
+        let maxSequenceFrames;
+        if (dataPtr["maxSequence"]["frames"][0] != dataPtr["maxSequence"]["frames"][countSequence - 1])
+            maxSequenceFrames = `frames: ${dataPtr["maxSequence"]["frames"][0]} - ${dataPtr["maxSequence"]["frames"][countSequence - 1]}`;
+        else
+            maxSequenceFrames = `frame: ${dataPtr["maxSequence"]["frames"][0]}`;
+
+        let maxSequenceRow = $('<tr>')
+            .attr('onclick', `glowFrames(this, '${selectedObj}')`)
+            .append($('<th scope="row">').text("Longest sequence in video:"))
+            .append($('<td>').text(maxSequenceFrames));
+
+        let sequenceDuration = countSequence / fps;
+        let maxSequenceApprox = `Approx. ${checkTimeUnits(sequenceDuration)}`;
+        let approxDurationRow = $('<tr>')
+            .attr('onclick', `glowFrames(this, '${selectedObj}')`)
+            .append($('<th>').text("Approx. duration in the video:"))
+            .append($('<td>').text(maxSequenceApprox));
+
+        // Append rows to table
+        table.append(frameCountRow)
+            .append(maxInFrameRow)
+            .append(minInFrameRow)
+            .append(maxSequenceRow)
+            .append(approxDurationRow);
+
+        // Append the table to the desired container
+        $('.detailsToShowOnObject').append(table);
+    
+    }
+
+        function showFrameDet(frame){
+            const $video1 = $('#videoPlayer1');
+            const video1Dom = $video1[0];
+            let hasClass = $(frame).hasClass('cardClicked');
+            $('.frameCard').removeClass('cardClicked');
+            if (hasClass){
+                $('.detailsToShowOnFrame').empty().append(initalFrameStatistic)
+                return
+            }
+            if (!video1Dom.paused)
+                $('#playPauseButton').click()
+
+            $(frame).addClass('cardClicked');
+            //head = $('<h5>').text(`Frame ${$(frame).text()}:`).append($('<p>').text('data1'))
+                let table = $('<table>').addClass('ObjectDetTable')
+                        .append($('<tr>')
+                            .append($('<th colspan="2">').text(`Frame ${$(frame).attr('frame')}:`))
+                        )
+                        .append($('<tr>')
+                            .append($('<th class="text-center">').text('Object'))
+                            .append($('<th class="text-center">').text('Count on Frame'))
+                );
+
+               
+
+
+            // Create table rows
+            let objectsDict = statistics["frame"]["rawData"][`frame_${$(frame).attr('frame')}.jpg`]
+
+            if (Object.keys(objectsDict).length){
+                for (key in objectsDict){
+                    table.append($('<tr>')
+                        .append($('<th>').text(key))
+                        .append(($('<td>').text(objectsDict[key]))))
+                }
+            }
+            else {
+                table.append(
+                    $('<tr>').append(
+                        $('<td colspan="2">').text('No Objects Found At Frame')
+                    )
+                );
+            }
+
+
+                //console.log(objectsDict[key])
+
+            $('.detailsToShowOnFrame').empty().append(table)
+            $('#playPauseButton').text('Play');
+            seekToFrame($(frame).attr('frame'))
+        }
+
+        function seekToFrame(frameNumber) {
+            let timeInSeconds = frameNumber / fps;  // Calculate the time in seconds
+            $('video').prop('currentTime', timeInSeconds);
+        }
+
+        function glowFrames(param,obj){
+            console.log(param.firstElementChild.innerText)
+            console.log()
+            let arr = statistics.object[obj]
+
+            $('.frameCard').removeClass('glowing').removeClass('cardClicked');
+
+            switch (param.firstElementChild.innerText.toLowerCase()) {
+                case "frame count:":
+                    console.log("fcount");
+                    arr = arr["framesShown"]
+                    break;
+
+                case "maximum appeared in frame:":
+                    console.log("Maximum");
+                    arr = [arr["maxInFrame"]["frame"]]
+                    break;
+
+                case "minimum appeared in frame:":
+                    console.log("Minimum");
+                    arr = [arr["minInFrame"]["frame"]]
+                    break;
+
+                case "longest sequence in video:":
+                    console.log("sequense");
+                    console.log(arr["maxSequence"]["frames"])
+                    arr = arr["maxSequence"]["frames"]
+                    break; 
+
+                case "approx. duration in the video:":
+                    console.log("sequense");
+                    arr = arr["maxSequence"]["frames"]
+                    break; 
+
+            } 
+            console.log(arr)
+            console.log(lastFramesToGlow)
+            if (JSON.stringify(arr) == JSON.stringify(lastFramesToGlow) || !arr){
+                //convert to json to ignore comparison problems
+                console.log("in")
+                lastFramesToGlow = undefined;
+                return
+            }
+                
+            // console.log(arr)
+            for (f of arr){
+                $(`#frame_${f}`).addClass('glowing')
+            }
+            lastFramesToGlow= arr;
+            $('#playPauseButton').text('Play');
+            seekToFrame(arr[0])
+            scrollToCard($(`#frame_${arr[0]}`),$('.frameCards'))
+        }
+        function checkTimeUnits(seconds){
+            let time;
+            let units;
+            if (seconds < 60){
+                time = seconds.toFixed(2)
+                units = time > 1? 'seconds': 'second';
+            }
+            else if (seconds < 3600){
+                time = (seconds/60).toFixed(2)
+                units = time > 1? 'minutes': 'minute';
+            }
+            else {
+                time = (seconds/3600).toFixed(2)
+                units = time > 1? 'hours': 'hour';
+            }
+
+            return `${time} ${units}`
+        }
+        function scrollToCard($card,$container){
+            // Get the current scroll position, card position, and container width
+            const cardPosition = $card.position().left;  // Card's position relative to the container
+            const containerWidth = $container.width();  // Width of the container
+            const cardWidth = $card.outerWidth();  // Width of the card itself
+
+            // Calculate the new scroll position to center the card
+            const scrollPosition = $container.scrollLeft() + cardPosition - (containerWidth / 2) + (cardWidth / 2);
+
+            // Scroll the container smoothly to the calculated position
+            $container.animate({ scrollLeft: scrollPosition }, 500);  
+        }
+
+    </script>
+</body>
+</html>

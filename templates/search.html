@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Results</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="./static/Styles/search.css">
+    <link rel="stylesheet" href="./static/Styles/filters.css">
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+</head>
+<body>
+    <div class="bar">
+        <h1 class="text-center" onclick="(function() {window.location.href = '/';})()">Video Analysis</h1>
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Object Search...">
+            <button onclick="search()">Search</button>
+        </div>
+        <div class="advanced-search-bt">
+            <p class="openBar" onclick="openAdvancedSearch()">Advanced Search</p>
+        </div>
+    </div>
+
+    <div class="windowContainer">
+        <div class="container">
+            <h1 id="searchH1" class="text-center">Search Results: {{ query }}</h1>
+            {% if status == 404 %}
+                <div class="alert alert-danger">{{ message }}</div>
+                {% if objectSuggest %}
+                    <div>Did you mean:
+                        {% for obj in objectSuggest %}
+                        <a href="/search?q={{obj}}">{{obj}}</a>
+                        {% endfor %}
+                    ?</div>
+                {% endif %}
+            {% else %}
+                <div class="image-grid">
+                    {% for result in results %}
+                        {% if result['processing'] %}
+                            <div class="card card-processing" >
+                        {% else %}
+                        <div class="card" onclick="onClickCard(this)">
+                        {% endif %}
+                            <img src="{{ result.frameSrc }}" alt="{{ result.fileName }}">
+                            <div class="card-content">
+                                <h5 class="card-title">{{ result.videoName}}</h5>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Sliding sidebar for advanced search -->
+        <div class="advanced-search-bar">
+            <div id="dropdownContainer" class="dropdown-container"></div>        
+            <!-- <button onclick="showSelected()">Filter</button> -->
+        </div>
+    </div>
+
+    <script>
+
+        $(document).ready(function() {
+            $('.card-processing img').after('<p class="processing">Processing</p>');
+        });
+
+        const searchInput = document.getElementById('searchInput');
+            searchInput.addEventListener('keydown', function(event) {
+                if (event.key === 'Enter') {
+                    search();
+                }
+            });
+        function search() {
+            const query = document.getElementById('searchInput').value;
+            if (query != '')
+                window.location.href = `/search?q=${query}`;
+        }
+
+        function openAdvancedSearch() {
+            $('.advanced-search-bar').toggleClass('open');
+        }
+
+        function resetFilters() {
+            //window.location.href = '/search?q=reset';
+            const urlParams = new URLSearchParams(window.location.search);
+            const qParam = urlParams.get('q');
+            generateFilters(values,qParam);
+        }
+        
+        function onClickCard(card) {
+            const img = card.querySelector('img');
+            const imgSrc = img.src;
+            localStorage.setItem('taggedFile', img.alt);
+            localStorage.setItem('history', true);
+            window.location.href = `/res?videoname=${btoa(img.alt)}`
+        }
+    </script>
+
+    <script> // filters
+        window.onload = (event) => {
+            values = {{ values|tojson }};
+            console.log(values)
+            const urlParams = new URLSearchParams(window.location.search);
+            const qParam = urlParams.get('q');
+            console.log($('.alert').length)
+            if ($('.alert').length) // check if nofound exist
+                $('.advanced-search-bt').empty()
+            else
+                generateFilters(values,qParam);
+        };
+
+       
+    function generateFilters(values,queryObject) {
+      const dropdownContainer = $('#dropdownContainer');
+      dropdownContainer.empty(); // Clear existing dropdowns
+    
+        for (key in values) {
+        const dropdownId = `dropdown-${key.replaceAll(' ','')}`;
+        let upperKey=key.charAt(0).toUpperCase()+key.slice(1)
+        let dropdownHtml = `
+          <div class="form-group">
+            <label class="filterTitle" for="${dropdownId}">${upperKey}:</label>
+            <div id="${dropdownId}" class="multiselect">
+              <div class="selectBox" onclick="toggleCheckboxArea('${dropdownId}')">
+                <select class="form-select">
+                  <option>Select options</option>
+                </select>
+                <div class="overSelect"></div>
+              </div>
+              <div id="${dropdownId}-options" class="select-options">`;
+                for (value of values[key]){
+                dropdownHtml += `<label><input type="checkbox" value="${value}" onchange="checkboxStatusChange(this,'${dropdownId}')"> ${value}</label>`
+                }
+                `</div>
+            </div>
+          </div>
+        `;
+        dropdownContainer.append(dropdownHtml);
+      }
+      let number = `
+        <div class="form-group">
+            <label class="filterTitle" for="dropdown-#Objects">Min Objects:</label>
+            <div id="dropdown-#Objects" class="numbers">
+                <input type="number" id="#Objects" class="form-select" min='1' value = '1' />
+            </div>
+            <label class="filterTitle" for="dropdown-#Objects">Unique Objects</label>
+        </div>
+        `;
+        dropdownContainer.append(number);
+    
+      initMultiselect(values); // Initialize the dropdowns
+      console.log($('.advanced-search-bt')[0])
+      if($('#closeAdvanced').length == 0 ){
+        let closeAndReset = $('<div>').addClass('advanced-search-bt');
+            closeAndReset.append(
+                            $('<button>')
+                                .text('Reset')
+                                .attr('id', 'reset')
+                                .on('click', resetFilters)
+                                .addClass(' btn btn-sm btn-outline-dark')
+                    );
+            closeAndReset.append(
+                            $('<button>')
+                                .text('Filter')
+                                .on('click', showSelected)
+                                .addClass('btn btn-primary btn-sm ')
+                    );
+            closeAndReset.append(
+                            $('<button>')
+                                .text('Close')
+                                .attr('id', 'closeAdvanced')
+                                .on('click', openAdvancedSearch)
+                                .addClass(' btn btn-sm btn-outline-dark')
+                    );
+        $('.advanced-search-bar').append(closeAndReset)
+        }
+      $(`input[type="checkbox"][value="${queryObject}"]`).click()
+      dropdownContainer.append(generateObjectsFilters())
+      if (queryObject)
+        addObjectConstraint(queryObject)
+    if (queryObject)
+        $('.openBar').click();
+    }
+    
+    function initMultiselect(values) {
+      // for (let i = 1; i <= number; i++) {
+      for (key in values){
+        checkboxStatusChange(null,`dropdown-${key.replaceAll(' ','')}`,key);
+      }
+    
+      $(document).on('click', function (e) {
+        if (!$(e.target).closest('.multiselect').length) {
+          toggleCheckboxArea(null, true); // Hide all options if clicked outside
+        }
+      });
+    }
+    
+    function checkboxStatusChange(element=null,dropdownId,key,choice=undefined) {
+        let values = [];
+        // let buttonConstarintJquery = '';
+        if(element && dropdownId == 'dropdown-objects' ) {
+            let constraint_name= ($(element).val()).replaceAll(' ','___')
+            let buttonConstarintJquery = `#${constraint_name}-constraint`;
+            if($(buttonConstarintJquery).length == 0 && element.checked)
+                addObjectConstraint($(element).val())
+            else{
+                console.log("need to remove")
+                $(buttonConstarintJquery).remove()
+                $(`#${constraint_name}-constraint-content`).remove()
+                
+            }
+                
+        }
+
+        
+        $(`#${dropdownId}-options input[type="checkbox"]:checked`).each(function () {
+            values.push($(this).val());
+        }); 
+        if (values.length)
+            $('#minSeq').removeAttr('disabled');
+        else {
+            $('#minSeq').val(1).attr('disabled', 'disabled');
+
+        }
+
+        filter = dropdownId.split('-')[1]
+        filter=filter.charAt(0).toUpperCase()+filter.slice(1)
+
+        let dropdownValue = values.length ? values.join(', ') : `Select ${filter}`;
+        $(`#${dropdownId} select option`).text(dropdownValue);
+    }
+    
+    function toggleCheckboxArea(dropdownId, onlyHide = false) {
+      if (dropdownId) {
+        let $checkboxes = $(`#${dropdownId}-options`);
+    
+        if ($checkboxes.is(':visible')) {
+          $checkboxes.hide();
+        } else if (!onlyHide) {
+          $checkboxes.show();
+        }
+      } else if (onlyHide) {
+        $('.select-options').hide();
+      }
+    }
+
+    function collapseHandler(element){
+        console.log(element)
+        $(element).toggleClass('active');
+            const content = $(element).next('.content');
+
+            if (content.css('max-height') !== '0px') {
+                content.css('max-height', '0');
+            } else {
+                content.css('max-height', content.prop('scrollHeight') + 'px');
+            }
+    }
+
+    function generateObjectsFilters(){
+        return `
+        <div id="collapsibleList">
+                <h5>Object Constraints</h5>
+            </div>`
+    }
+
+    function addObjectConstraint(name){
+        nameID = name.replaceAll(' ','___');
+        $('#collapsibleList').append(`
+            <button id="${nameID}-constraint" class="collapsible" onclick="collapseHandler(this)">${name}</button>
+                <div class="content" id= "${nameID}-constraint-content">
+                </div>
+            `    
+        )
+        let minSeq = `
+        <div class="form-group">
+            <label class="filterTitle" for="dropdown-#Objects">Min Object Sequence :</label>
+            <div id="dropdown-minSeq" class="numbers">
+                <input type="number" id="minSeq" class="form-select" object="${name}" step="0.1" min='0' value = '0'  />
+            </div>
+            <label class="filterTitle" for="dropdown-#Objects">In Seconds</label>
+        </div>
+        `
+        $(`#${nameID}-constraint-content`).append(minSeq)
+
+        let objectInFrame = `
+        <div class="form-group">
+            <label class="filterTitle" for="dropdown-#ObjectInFrame">Count Elements On Frame :</label>
+            <div id="dropdown-ObjectInFrame" class="numbers">
+                <input type="number" id="ObjectInFrame" class="form-select" object="${name}" min='1' value = '1'  />
+            </div>
+            <label class="filterTitle" for="dropdown-#Objects">At Least</label>
+        </div>
+        `
+        $(`#${nameID}-constraint-content`).append(objectInFrame)
+
+    }
+    
+    async function showSelected() {
+      let filters = {};
+      $('.container h1:nth-of-type(2)').empty(); // remove not found h1 if exist
+      let checked;
+      $('.select-options').each(function () {
+        let filter=$(this).attr('id').split('-')[1]; //extract the filter
+        checked = $(this).find('input[type="checkbox"]:checked').map(function () {
+          return $(this).val();
+        }).get(); // write the elements as string
+        
+        if (filter === 'objects') {
+            console.log("in condition")
+        // Initialize the size object if not already present
+        if (!filters['objectFilters']) {
+            filters['objectFilters'] = {};
+        }
+        // Map each checked value to an empty array
+        checked.forEach(function (value) {
+            filters['objectFilters'][value] = {};
+        });
+        console.log(filters)
+        }
+        if (filter != 'objectFilters')
+            filters[filter]=(checked.length ? checked.join(',') : '');
+      });
+
+
+      $('input[type="number"]').each(function () {
+        if ($(this).attr('id') == '#Objects') // general filter with input number
+            filters[$(this).attr('id')] = $(this).val();
+        else{ // spesific object filter constraint
+            filters['objectFilters'][$(this).attr('object')][$(this).attr('id')] = $(this).val();
+            // use the object attr of the input to know the name of the object
+            // exmaple: filters['objectFilters']['car']['minSeq'] = 3
+        }
+      });
+
+
+      let objectsString =filters['objects'];
+      console.log(filters)
+      for (filter in filters) {
+        if (filter != 'objectFilters')
+            filters[filter] = filters[filter]==''? [] : filters[filter].split(',')
+      } // extract strings into 2d array
+      console.log("hhhhhhhh")
+      console.log(filters)
+
+      $('.image-grid').empty();
+
+      data = await searchWithFilters(filters)
+      $('.notFound').remove()
+      $('#searchH1').text('Search Results: ' + objectsString.replaceAll(',',' & '));  // Set the modified text back
+
+
+      if (!data){
+        let notFound = $('<h1 class="notFound"></h1>').text('No Videos Found').css({
+        'color': 'red',
+        'text-align': 'center'  // Add text alignment to center
+        });
+        $('.container').append(notFound);  // Append the created element
+        return;
+      }
+
+
+    // Clear the current image grid
+    console.log(data)
+
+    data.forEach(res => {
+        const cardHtml = `
+            <div class="card" onclick="onClickCard(this)">
+                <img src="${res.frameSrc}" alt="${res.fileName}">
+                <div class="card-content">
+                    <h5 class="card-title">${res.videoName}</h5>
+                </div>
+            </div>
+        `;
+
+        // Append the created card to the .image-grid
+        $('.image-grid').append(cardHtml);
+    });
+
+    }
+
+    function searchWithFilters(params) {
+        return fetch('http://localhost:5000/searchWithFilters', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(params)
+        })
+        .then(response => {
+            if (response.status === 404) {
+                console.log("No data found (404).");
+                return false; // Handle 404 Not Found
+            }
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json(); // Parse the JSON response
+        })
+        .then(data => {
+            console.log(data)
+            if (data.data && data.data.length > 0) {
+                return data.data; // Return data if found
+            } else {
+                return false; // Return false if no data is found
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            return false; // Return false if there was an error
+        });
+    }
+
+
+    </script>
+</body>
+</html>

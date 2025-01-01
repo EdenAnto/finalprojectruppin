@@ -1,0 +1,219 @@
+body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Arial', sans-serif;
+    background-color: #f8f9fa;
+}
+
+.bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    height: 80px; /* Reduced height */
+    background-color: #343a40; /* Darker background */
+    color: white;
+    border-bottom: 1px solid #dee2e6;
+    padding: 0 20px;
+    position: relative;
+
+}
+
+.bar h1 {
+    margin: 0;
+}
+
+.search-box {
+    display: flex;
+    align-items: center;
+}
+
+.search-box input[type="text"] {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 20px 0 0 20px;
+    outline: none;
+}
+
+.search-box button {
+    padding: 5px 10px;
+    border: none;
+    background-color: #007bff;
+    color: white;
+    border-radius: 0 20px 20px 0;
+    cursor: pointer;
+    display: block;
+}
+
+.windowContainer{
+    height: 100%;
+    width: 100%;
+    display: flex;
+}
+.advanced-search-bt{
+    position: absolute;
+    bottom: 0px;
+    right: 0px;
+    margin-bottom: 0px;
+    text-decoration: underline;
+    cursor: pointer;
+    display: inline-block;
+}
+.closeAndReset{
+    display: inline-block;
+    text-decoration: underline;
+    margin-right: 10px;
+    margin-bottom: 0px ;
+}
+
+.container {
+    height: calc(100% - 80px); /* Adjusting height based on bar height */
+    padding-top: 20px;
+    flex: 1;
+
+}
+
+.mainContainer {
+    display: flex;
+    justify-content: space-between;
+    padding: 20px;
+    gap: 20px;
+}
+
+.leftContent {
+    width: 30%;
+    background-color: #ffffff; /* White background */
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+.rightContent {
+    width: 70%;
+    background-color: #ffffff; /* White background */
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+.image-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+}
+
+.card {
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+
+.card-content {
+    padding: 10px;
+    text-align: center;
+}
+
+.card-content h5 {
+    margin: 0;
+    font-size: 1.25em;
+}
+
+.card-content p {
+    margin: 5px 0 0;
+    color: #777;
+    font-size: 0.9em;
+}
+
+.card:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+
+/* Advanced Search */
+.advanced-search-bar{
+    background-color: white;
+    height: 10%;
+    
+}
+
+
+.multiselect {
+    width: 100%;
+  }
+
+  .selectBox {
+    position: relative;
+  }
+
+  .selectBox select {
+    width: 100%;
+  }
+
+  .overSelect {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+  }
+
+  .select-options {
+    display: none;
+    border: 0.5px #7c7c7c solid;
+    background-color: #ffffff;
+    max-height: 150px;
+    overflow-y: scroll;
+  }
+
+  .select-options label {
+    display: block;
+    font-weight: normal;
+    white-space: nowrap;
+    min-height: 1.2em;
+    background-color: #ffffff00;
+    padding: 0 2.25rem 0 .75rem;
+    color: black;
+  }
+
+  .select-options label:hover {
+    background-color: #1e90ff;
+  }
+
+  /* Use Flexbox to align dropdowns in the same line */
+  .dropdown-container {
+    display: flex;
+    gap: 30px; /* Adds spacing between dropdowns */
+  }
+
+  .form-group {
+    flex: 1; /* Makes each dropdown take equal width */
+    min-width: 150px;
+  }
+  .form-group label{
+    color: black;
+  }
+  /* only for the upper label */
+  .filterTitle { 
+    width: 100%;
+    text-align: center;
+  }
+
+
+  .form-select {
+    width: 100%;
+    padding: 5px;
+  }
+  
+

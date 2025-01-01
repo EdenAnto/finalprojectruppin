@@ -1,0 +1,29 @@
+body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Arial', sans-serif;
+    background-color: #f8f9fa;
+}
+
+.container {
+    text-align: center;
+}
+
+h1 {
+    color: #dc3545;
+}
+
+.btn-home {
+    margin-top: 20px;
+    background-color: #007bff;
+    border: none;
+}
+
+.btn-home:hover {
+    background-color: #0056b3;
+}
